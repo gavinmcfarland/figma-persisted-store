@@ -1,15 +1,15 @@
-# Figma Persisted Store
+# Figma Store
 
 This allows you to create stores which can persists in `clientStorage`.
 
 > [!NOTE]
 > This hasn't been packaged yet and is a work in progress.
 
-<!-- ### Setup
+### Setup
 
 ```js
-import { persisted } from "figma-persited-store";
-``` -->
+import { persisted } from "figma-store";
+```
 
 ### Usage
 
@@ -23,7 +23,7 @@ greeting.update((e) => e + " world!"); // => "hello world!"
 greeting.set("goodbye!"); // => "goodbye!"
 
 greeting.subscribe((value) => {
-    console.log(value);
+  console.log(value);
 }); // logs "goodbye!""
 ```
 

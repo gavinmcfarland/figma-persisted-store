@@ -5,7 +5,7 @@ type Opts = {
 	};
 };
 
-export class Msgr {
+class Msgr {
 	pluginId: string;
 	constructor(opts?: Opts) {
 		this.pluginId = opts?.pluginId ? opts.pluginId : "*";
@@ -112,6 +112,8 @@ export class Msgr {
 	}
 }
 
-export default new Msgr({
-	pluginId: "figma-figmayo",
+let msgr = new Msgr({
+	pluginId: "*",
 });
+
+export { msgr, Msgr };
