@@ -5,29 +5,43 @@ This allows you to create stores which can persists in `clientStorage`.
 > [!NOTE]
 > This hasn't been packaged yet and is a work in progress.
 
-### Setup
+## Setup
 
 ```js
 import { persisted } from "figma-store";
 ```
 
-### Usage
+## Usage
 
 A persisted store takes a `key` and can be used in both the `main` code and the `ui`.
 
+### Creating a store
+
 ```js
 const greeting = persisted("greeting", "hello"); // => "hello"
-
-greeting.update((e) => e + " world!"); // => "hello world!"
-
-greeting.set("goodbye!"); // => "goodbye!"
-
-greeting.subscribe((value) => {
-  console.log(value);
-}); // logs "goodbye!""
 ```
 
-### How does it work?
+### Updating a store
+
+```js
+greeting.update((e) => e + " world!"); // => "hello world!"
+```
+
+### Setting a store
+
+```js
+greeting.set("goodbye!"); // => "goodbye!"
+```
+
+### Subscribing to a store
+
+```js
+greeting.subscribe((value) => {
+    console.log(value);
+});
+```
+
+## How does it work?
 
 When the `persisted` function is imported, a message event listener is initialized to handle communication between the Figma plugin's main thread and the UI. This listener facilitates interaction with `clientStorage`.
 

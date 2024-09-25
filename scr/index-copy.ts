@@ -1,5 +1,5 @@
 import { derived, writable } from "svelte/store";
-import { Msgr } from "./messenger";
+import { Msgr } from "../messenger";
 
 class PersistedStore {
 	private isHandlersInitialized = false;

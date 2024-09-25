@@ -1,5 +1,5 @@
 import { writable, get } from "svelte/store";
-import { msgr, Msgr } from "./messenger";
+import { msgr, Msgr } from "../messenger";
 
 export function listeners() {
 	new Msgr({
