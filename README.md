@@ -13,7 +13,7 @@ Inside the UI import the `FigmaStore` class.
 import { FigmaStore } from "figma-store";
 ```
 
-Within the main code, initialise the listeners required to for the UI to make updates to `clientStorage` and `pluginData`.
+Within the main code, initialise the listeners required for the UI to make updates to `clientStorage` and `pluginData`.
 
 ```js
 import { initListeners } from "figma-store";
