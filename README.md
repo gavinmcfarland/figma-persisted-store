@@ -1,48 +1,98 @@
 # Figma Store
 
-This allows you to create stores which can persists in `clientStorage`.
+This allows you to create stores which can persists in `clientStorage` and `pluginData`.
 
 > [!NOTE]
-> This hasn't been packaged yet and is a work in progress.
+> This project is still in conception.
 
 ## Setup
 
+Inside the UI import the `FigmaStore` class.
+
 ```js
-import { persisted } from "figma-store";
+import { FigmaStore } from "figma-store";
+```
+
+Within the main code, initialise the listeners required to for the UI to make updates to `clientStorage` and `pluginData`.
+
+```js
+import { initListeners } from "figma-store";
+
+initListeners();
 ```
 
 ## Usage
 
-A persisted store takes a `key` and can be used in both the `main` code and the `ui`.
+### Create a store
 
-### Creating a store
+To persist a store to `clientStorage` provide a key and an initial value.
 
 ```js
-const greeting = persisted("greeting", "hello"); // => "hello"
+let store = await FigmaStore.create("key", { count: 0 });
 ```
+
+This initialises the store. When the UI loads, it will grab the data from the main code using `figma.clientStorage.getAsync("key")`.
 
 ### Updating a store
 
 ```js
-greeting.update((e) => e + " world!"); // => "hello world!"
+store.update((value) => {
+  return value + 1
+)
 ```
+
+This is synchronouse and immediately updates the value of the store in the UI while asynchronously updating the value in `clientStorage`.
 
 ### Setting a store
 
-```js
-greeting.set("goodbye!"); // => "goodbye!"
-```
-
-### Subscribing to a store
+The same happens for replacing the value using `set`.
 
 ```js
-greeting.subscribe((value) => {
-    console.log(value);
-});
+store.set(0);
 ```
 
-## How does it work?
+## PluginData
 
-When the `persisted` function is imported, a message event listener is initialized to handle communication between the Figma plugin's main thread and the UI. This listener facilitates interaction with `clientStorage`.
+Below is a basic example of storing a value using `pluginData`. It requires a key, an initial value and a function that returns the node for the plugin data to be set on.
 
-When a store is created, updated, or subscribed to, its value is persisted in `clientStorage`. If the operation is performed from the UI, a message is sent to the main thread, which in turn triggers `clientStorage.setAsync()` or `clientStorage.getAsync()`. This ensures that data is saved in the plugin’s local storage, even when actions are initiated from the UI.
+```js
+let fileKey = await Store.create("fileKey", null, (figma) => figma.root);
+```
+
+Below is a more complex example of setting `pluginData` on a several nodes by returning an array of nodes. It also shows how you can also provide in a dynamic value in retrieving the node.
+
+```js
+let store = await Store.create(
+    `layerStyle${id}`,
+    {},
+    (figma, { id }) => {
+        return figma.root.findAll((node) => node.name === layerStyle + id);
+    },
+    { id }
+);
+```
+
+## Async
+
+If you need to wait for a store to be set asynchronously, you can use the `Async` variant.
+
+### Updating a store asynchronously
+
+For example, you can update a value based off some logic with the main code.
+
+```js
+await sites.updateAsync(async (figma, store, { siteId }) => {
+    store.map((site) => {
+        const activeSite = await figma.clientStorage.getAsync("activeSite")
+
+        if (activeSite) {
+            return store.shift()
+        }
+        else {
+            site.activeSite(sideId)
+        }
+    }, {siteId})
+
+    return store
+)
+```

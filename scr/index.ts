@@ -1,100 +1,156 @@
-import { writable, get } from "svelte/store";
-import { msgr, Msgr } from "../messenger";
+import { writable, type Writable } from "svelte/store";
+import { figmaAPI } from "./figmaAPI";
 
-export function listeners() {
-	new Msgr({
-		handlers: {
-			"persistable-set-client-storage": ({ key, value }) => {
-				console.log("--- set client storage", key, value);
-				if (key) {
-					figma.clientStorage.setAsync(key, value);
-				}
-			},
-			"persistable-get-client-storage": async ({ key }) => {
-				console.log("--- get client storage", key);
-				if (key) {
-					return await figma.clientStorage.getAsync(key);
-				}
-			},
-		},
-	});
-}
+type NonUndefined<T> = Exclude<T, undefined>;
 
-export function persisted(key: string, initialValue: any) {
-	const store = writable(initialValue);
+export class FigmaStore<T extends object | number | string | boolean> {
+	private state: T;
+	private store: Writable<T>;
+	private isInitialized: boolean;
+	private storageKey: string;
+	private nodeTarget?: () => SceneNode | BaseNode;
 
-	// Load initial value from clientStorage
-	if (typeof window !== "undefined") {
-		msgr.emit("persistable-get-client-storage", { key }).then((value) => {
-			if (value !== undefined) {
-				store.set(value); // Set the initial value if it exists in client storage
-			}
-		});
-	} else {
-		figma.clientStorage.getAsync(key).then((value) => {
-			if (value !== undefined) {
-				store.set(value); // Set the initial value if it exists in Figma clientStorage
-			}
-		});
+	constructor(
+		storageKey: string,
+		defaultState: NonUndefined<T>,
+		nodeTarget?: () => SceneNode | BaseNode
+	) {
+		this.state = defaultState;
+		this.store = writable(this.state);
+		this.isInitialized = false;
+		this.storageKey = storageKey;
+		this.nodeTarget = nodeTarget;
 	}
 
-	// Intercept the `subscribe` method
-	const customStore = {
-		subscribe(
-			run: (value: any) => void,
-			invalidate?: (value?: any) => void
-		) {
-			console.log("Subscribing to store");
+	/** Static method to create and initialize the store */
+	static async create<T extends object | number | string | boolean>(
+		key: string,
+		defaultState: NonUndefined<T>,
+		nodeTarget?: () => SceneNode | BaseNode
+	): Promise<FigmaStore<T>> {
+		const store = new FigmaStore(key, defaultState, nodeTarget);
+		await store.initialize();
+		return store;
+	}
 
-			// Call original store subscribe
-			return store.subscribe(run, invalidate);
-		},
+	/** Initialize the store by loading state from clientStorage */
+	async initialize(): Promise<void> {
+		if (this.isInitialized) return;
 
-		// Intercept the `set` method
-		async set(value: any) {
-			console.log("Setting value:", value);
-			store.set(value); // Set the value in the original store
+		try {
+			const storedState = await figmaAPI.run(
+				async (figma, { key }) => {
+					return await figma.clientStorage.getAsync(key);
+				},
+				{ key: this.storageKey }
+			);
 
-			// Save to clientStorage
-			if (typeof window !== "undefined") {
-				await msgr.emit("persistable-set-client-storage", {
-					key,
-					value,
-				});
-			} else {
-				await figma.clientStorage.setAsync(key, value);
+			// Ensure that storedState is only applied if it is not undefined
+			if (typeof storedState !== "undefined") {
+				this.state = storedState;
 			}
-		},
+			this.isInitialized = true;
+			console.log("initialise state");
+			this.store.set(this.state); // Update the Svelte store
+		} catch (error) {
+			console.error(
+				`Failed to load state from storage for key "${this.storageKey}":`,
+				error
+			);
+		}
+	}
 
-		// Intercept the `update` method
-		async update(updater: (value: any) => any) {
-			console.log("Updating value");
-			store.update(updater); // Call the update function on the original store
+	/** Svelte's subscribe method */
+	subscribe(
+		run: (value: T) => void,
+		invalidate?: (value?: T) => void
+	): () => void {
+		return this.store.subscribe(run, invalidate);
+	}
 
-			const value = get(store); // Get the current value from the store after the update
+	// NOTE: Disable now because error when store hasn't been created during reactive state
+	// /** Get the current state synchronously */
+	// get(): T {
+	// 	console.log('get state')
+	// 	return this.state
+	// }
 
-			// Save updated value to clientStorage
-			if (typeof window !== "undefined") {
-				await msgr.emit("persistable-set-client-storage", {
-					key,
-					value,
-				});
-			} else {
-				await figma.clientStorage.setAsync(key, value);
-			}
-		},
+	/** Set the state immediately and persist asynchronously */
+	set(newState: T): void {
+		console.log("set state");
+		this.state = newState;
+		this.store.set(this.state); // Update the Svelte store
+		this._saveStateToStorage();
+	}
 
-		// Expose a `get` method to retrieve the current store value
-		async get() {
-			if (typeof window !== "undefined") {
-				return await msgr.emit("persistable-get-client-storage", {
-					key,
-				});
-			} else {
-				return await figma.clientStorage.getAsync(key);
-			}
-		},
-	};
+	/** Update the state with a synchronous updater function */
+	update(updaterFunction: (state: T) => T): void {
+		console.log("update state");
+		this.state = updaterFunction(this.state);
+		if (typeof this.state !== "undefined") {
+			this.store.set(this.state); // Update the Svelte store
+			this._saveStateToStorage();
+		}
+	}
 
-	return customStore;
+	/** Update the state with an asynchronous updater function */
+	async updateAsync(
+		asyncUpdaterFunction: (state: T) => Promise<T>
+	): Promise<void> {
+		try {
+			const storedState = await figmaAPI.run(
+				async (figma, { key, asyncUpdaterFunction, initialValue }) => {
+					// Get store
+					let store = await figma.clientStorage.getAsync(key);
+
+					// Use initialValue if store is undefined
+					if (typeof store === "undefined") {
+						store = initialValue;
+					}
+
+					// Do something with store
+					const updatedValue = await asyncUpdaterFunction(store);
+
+					if (typeof updatedValue !== "undefined") {
+						// Set new store
+						await figma.clientStorage.setAsync(key, updatedValue);
+						return updatedValue;
+					}
+				},
+				{
+					key: this.storageKey,
+					asyncUpdaterFunction,
+					initialValue: this.state,
+				}
+			);
+
+			this.state = storedState || this.state;
+			this.store.set(this.state); // Update the Svelte store
+		} catch (error) {
+			console.error("Failed to update state asynchronously:", error);
+		}
+	}
+
+	/** Retrieve the node target, if provided */
+	getNodeTarget(): SceneNode | BaseNode | undefined {
+		return this.nodeTarget ? this.nodeTarget() : undefined;
+	}
+
+	/** Internal method to save state */
+	private async _saveStateToStorage(): Promise<void> {
+		try {
+			await figmaAPI.run(
+				async (figma, { key, value }) => {
+					await figma.clientStorage.setAsync(key, value);
+					return value;
+				},
+				{ key: this.storageKey, value: this.state }
+			);
+		} catch (error) {
+			console.error(
+				`Failed to save state to storage for key "${this.storageKey}":`,
+				error
+			);
+		}
+	}
 }

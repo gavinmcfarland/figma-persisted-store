@@ -15,5 +15,9 @@
     "description": "",
     "dependencies": {
         "svelte": "^4.2.19"
+    },
+    "devDependencies": {
+        "tslib": "^2.7.0",
+        "typescript": "^5.6.2"
     }
 }

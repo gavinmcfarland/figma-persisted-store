@@ -1,21 +1,49 @@
 ### Create a store
 
+**Client storage**
+
+Storing data on clientStorage.
+
 ```js
-let sites = store("sites", []);
+let store = await Store.create("key", { count: 0 });
 ```
 
-### Initialising a store
+**Plugin data**
+
+Storing data on the file root.
 
 ```js
-await sites.init();
+let store = await Store.create("fileKey", { count: 0 }, (figma) => figma.root);
 ```
 
-### Fetching data during intialisation
+Setting data on several nodes.
 
 ```js
-await sites.init((sites) => {
-    let { data, error } = fetch();
+let store = await Store.create({ count: 0 }, `layerStyle`, (figma, styleId) => {
+    return figma.root.findAll((node) => node.name === "Rectangle");
+});
+```
 
+### Setting a store
+
+```js
+await sites.set([]);
+```
+
+### Updating a store
+
+```js
+await sites.update((data) => {
+    // do some stuff
+    return data;
+});
+```
+
+### Updating a store asyncronously
+
+```js
+await sites.updateAsync((data) => {
+    // do some stuff
     return data;
 });
 ```
