@@ -70,13 +70,13 @@ console.log(store.get()); // => 0
 Below is a basic example of storing a value using `pluginData`. It requires a key, an initial value and a function that returns the node for the plugin data to be set on.
 
 ```js
-let fileKey = await Store.create("fileKey", null, (figma) => figma.root);
+let fileKey = await FigmaStore.create("fileKey", null, (figma) => figma.root);
 ```
 
 Below is a more complex example of setting `pluginData` on several nodes by returning an array of nodes. It also shows how you can also provide in a dynamic value in retrieving the node.
 
 ```js
-let store = await Store.create(
+let store = await FigmaStore.create(
     `layerStyle${id}`,
     {},
     (figma, { id }) => {
