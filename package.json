@@ -20,11 +20,10 @@
     "license": "ISC",
     "description": "",
     "devDependencies": {
-        "svelte": "^4.2.19",
-        "tslib": "^2.7.0",
         "typescript": "^5.6.2"
     },
     "dependencies": {
-        "@figma/plugin-typings": "^1.100.2"
+        "@figma/plugin-typings": "^1.100.2",
+        "svelte": "^4.2.19"
     }
 }
