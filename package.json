@@ -13,7 +13,10 @@
         "dist"
     ],
     "exports": {
-        ".": "./dist/index.js"
+        ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/types/index.d.ts"
+        }
     },
     "keywords": [],
     "author": "",

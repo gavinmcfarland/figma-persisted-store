@@ -1,19 +1,26 @@
 import { writable, type Writable, get } from "svelte/store";
 import { figmaAPI } from "./figmaAPI";
 
-type NonUndefined<T> = Exclude<T, undefined>;
+type StoreValue = object | number | string | boolean | null;
 
-export class FigmaStore<T extends object | number | string | boolean> {
+export class FigmaStore<T extends StoreValue> {
 	private state: T;
 	private store: Writable<T>;
 	private isInitialized: boolean;
 	private storageKey: string;
-	private nodeTarget?: () => SceneNode | BaseNode;
+	private nodeTarget?: (
+		figma: PluginAPI,
+		params: Record<string, any>
+	) => SceneNode | BaseNode[]; // Updated to return either SceneNode or BaseNode[]
 
 	constructor(
 		storageKey: string,
-		defaultState: NonUndefined<T>,
-		nodeTarget?: () => SceneNode | BaseNode
+		initialValue: T, // Changed from defaultState to initialValue
+		nodeTarget?: (
+			figma: PluginAPI,
+			params: Record<string, any>
+		) => SceneNode | BaseNode[], // Updated
+		private params?: Record<string, any>
 	) {
 		// Check if we're in the Figma main code environment
 		if (typeof figma !== "undefined") {
@@ -22,20 +29,25 @@ export class FigmaStore<T extends object | number | string | boolean> {
 			);
 		}
 
-		this.state = defaultState;
+		this.state = initialValue; // Changed from defaultState to initialValue
 		this.store = writable(this.state);
 		this.isInitialized = false;
 		this.storageKey = storageKey;
 		this.nodeTarget = nodeTarget;
+		this.params = params;
 	}
 
 	/** Static method to create and initialize the store */
-	static async create<T extends object | number | string | boolean>(
+	static async create<T extends object | number | string | boolean | null>(
 		key: string,
-		defaultState: NonUndefined<T>,
-		nodeTarget?: () => SceneNode | BaseNode
+		initialValue: T, // Changed from defaultState to initialValue
+		nodeTarget?: (
+			figma: PluginAPI,
+			params: Record<string, any>
+		) => SceneNode | BaseNode[], // Updated
+		params?: Record<string, any> // Optional fourth parameter
 	): Promise<FigmaStore<T>> {
-		const store = new FigmaStore(key, defaultState, nodeTarget);
+		const store = new FigmaStore(key, initialValue, nodeTarget, params);
 		await store.initialize();
 		return store;
 	}
@@ -46,10 +58,16 @@ export class FigmaStore<T extends object | number | string | boolean> {
 
 		try {
 			const storedState = await figmaAPI.run(
-				async (figma, { key }) => {
+				async (figma, inputParams) => {
+					const { key, params } = inputParams || {
+						key: "",
+						params: undefined,
+					};
+					// Guard clause for undefined key
+					if (!key) return;
 					return await figma.clientStorage.getAsync(key);
 				},
-				{ key: this.storageKey }
+				{ key: this.storageKey, params: this.params }
 			);
 
 			// Ensure that storedState is only applied if it is not undefined
@@ -103,7 +121,16 @@ export class FigmaStore<T extends object | number | string | boolean> {
 	): Promise<void> {
 		try {
 			const storedState = await figmaAPI.run(
-				async (figma, { key, asyncUpdaterFunction, initialValue }) => {
+				async (figma, inputParams) => {
+					const { key, asyncUpdaterFunction, initialValue, params } =
+						inputParams || {
+							key: "",
+							asyncUpdaterFunction: undefined,
+							initialValue: undefined,
+							params: undefined,
+						};
+					if (!key || !asyncUpdaterFunction) return;
+
 					// Get store
 					let store = await figma.clientStorage.getAsync(key);
 
@@ -124,7 +151,8 @@ export class FigmaStore<T extends object | number | string | boolean> {
 				{
 					key: this.storageKey,
 					asyncUpdaterFunction,
-					initialValue: this.state,
+					initialValue: this.state, // Changed from defaultState to initialValue
+					params: this.params, // Pass optional params
 				}
 			);
 
@@ -136,20 +164,41 @@ export class FigmaStore<T extends object | number | string | boolean> {
 	}
 
 	/** Retrieve the node target, if provided */
-	getNodeTarget(): SceneNode | BaseNode | undefined {
-		return this.nodeTarget ? this.nodeTarget() : undefined;
+	getNodeTarget(): SceneNode | BaseNode | BaseNode[] | undefined {
+		if (this.nodeTarget) {
+			const target = this.nodeTarget(figma, this.params || {});
+
+			// If it's an array, return the entire array of nodes
+			if (Array.isArray(target)) {
+				return target.length > 0 ? target : undefined;
+			}
+
+			// Otherwise, assume it's a single node and return it
+			return target;
+		}
+		return undefined;
 	}
 
 	/** Internal method to save state */
 	private async _saveStateToStorage(): Promise<void> {
 		try {
-			await figmaAPI.run(
-				async (figma, { key, value }) => {
-					await figma.clientStorage.setAsync(key, value);
-					return value;
-				},
-				{ key: this.storageKey, value: this.state }
-			);
+			const inputParams = {
+				key: this.storageKey,
+				value: this.state,
+				params: this.params,
+			};
+			await figmaAPI.run(async (figma, inputParams) => {
+				// Safely destructure after checking if inputParams is defined
+				const { key, value, params } = inputParams || {
+					key: "",
+					value: undefined,
+					params: undefined,
+				};
+
+				if (!key || !value) return;
+				await figma.clientStorage.setAsync(key, value);
+				return value;
+			}, inputParams);
 		} catch (error) {
 			console.error(
 				`Failed to save state to storage for key "${this.storageKey}":`,
@@ -159,5 +208,5 @@ export class FigmaStore<T extends object | number | string | boolean> {
 	}
 }
 
-// Export svelte's get method so it can be retreived
+// Export Svelte's get method so it can be retrieved
 export { get };

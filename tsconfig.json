@@ -1,17 +1,18 @@
 {
     "compilerOptions": {
-        "module": "ESNext",
-        "target": "ESNext",
         "declaration": true,
         "declarationDir": "./dist/types",
+        "emitDeclarationOnly": true,
         "outDir": "./dist",
         "moduleResolution": "node",
         "esModuleInterop": true,
-        "skipLibCheck": true,
+        "target": "ESNext",
+        "module": "ESNext",
         "strict": true,
         "resolveJsonModule": true,
-        "typeRoots": ["node_modules/@figma", "node_modules/@types"]
+        "typeRoots": ["node_modules/@figma", "node_modules/@types"],
+        "skipLibCheck": true
     },
     "include": ["src/**/*"],
-    "exclude": ["node_modules", "dist"]
+    "exclude": ["node_modules", "dist", "test"]
 }
