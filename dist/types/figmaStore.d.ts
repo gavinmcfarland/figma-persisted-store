@@ -13,6 +13,7 @@ export declare class FigmaStore<T extends object | number | string | boolean> {
     initialize(): Promise<void>;
     /** Svelte's subscribe method */
     subscribe(run: (value: T) => void, invalidate?: (value?: T) => void): () => void;
+    get(): T;
     /** Set the state immediately and persist asynchronously */
     set(newState: T): void;
     /** Update the state with a synchronous updater function */

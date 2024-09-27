@@ -47,6 +47,9 @@ export class FigmaStore {
     subscribe(run, invalidate) {
         return this.store.subscribe(run, invalidate);
     }
+    get() {
+        return this.state;
+    }
     /** Set the state immediately and persist asynchronously */
     set(newState) {
         console.log("set state");

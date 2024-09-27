@@ -8,7 +8,7 @@ This allows you to create stores which can persists in `clientStorage` and `plug
 ## Install
 
 ```shell
-npm install figma-store --save-dev
+npm install figma-store@next --save-dev
 ```
 
 ## Setup
