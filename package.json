@@ -9,8 +9,11 @@
         "build": "tsc",
         "prepublishOnly": "npm run build"
     },
+    "files": [
+        "dist"
+    ],
     "exports": {
-        ".": "./src/index.ts"
+        ".": "./dist/index.js"
     },
     "keywords": [],
     "author": "",
