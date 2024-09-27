@@ -1,21 +1,17 @@
 {
-    "extends": "@tsconfig/svelte/tsconfig.json",
     "compilerOptions": {
-        "target": "ESNext",
-        "useDefineForClassFields": true,
         "module": "ESNext",
+        "target": "ESNext",
+        "declaration": true,
+        "declarationDir": "./dist/types",
+        "outDir": "./dist",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "strict": true,
         "resolveJsonModule": true,
-        /**
-         * Typecheck JS in `.svelte` and `.js` files by default.
-         * Disable checkJs if you'd like to use dynamic types in JS.
-         * Note that setting allowJs false does not prevent the use
-         * of JS in `.svelte` files.
-         */
-        "allowJs": true,
-        "checkJs": true,
-        "isolatedModules": true,
-        "moduleDetection": "force",
         "typeRoots": ["node_modules/@figma", "node_modules/@types"]
     },
-    "include": ["src/**/*.ts", "src/**/*.js", "types.d.ts"]
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "dist"]
 }

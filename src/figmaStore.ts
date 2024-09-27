@@ -15,6 +15,13 @@ export class FigmaStore<T extends object | number | string | boolean> {
 		defaultState: NonUndefined<T>,
 		nodeTarget?: () => SceneNode | BaseNode
 	) {
+		// Check if we're in the Figma main code environment
+		if (typeof figma !== "undefined") {
+			throw new Error(
+				"FigmaStore cannot be used in the Figma main thread."
+			);
+		}
+
 		this.state = defaultState;
 		this.store = writable(this.state);
 		this.isInitialized = false;
@@ -50,7 +57,7 @@ export class FigmaStore<T extends object | number | string | boolean> {
 				this.state = storedState;
 			}
 			this.isInitialized = true;
-			console.log("initialise state");
+			console.log("initialize state");
 			this.store.set(this.state); // Update the Svelte store
 		} catch (error) {
 			console.error(
@@ -67,13 +74,6 @@ export class FigmaStore<T extends object | number | string | boolean> {
 	): () => void {
 		return this.store.subscribe(run, invalidate);
 	}
-
-	// NOTE: Disable now because error when store hasn't been created during reactive state
-	// /** Get the current state synchronously */
-	// get(): T {
-	// 	console.log('get state')
-	// 	return this.state
-	// }
 
 	/** Set the state immediately and persist asynchronously */
 	set(newState: T): void {

@@ -59,7 +59,7 @@ Below is a basic example of storing a value using `pluginData`. It requires a ke
 let fileKey = await Store.create("fileKey", null, (figma) => figma.root);
 ```
 
-Below is a more complex example of setting `pluginData` on a several nodes by returning an array of nodes. It also shows how you can also provide in a dynamic value in retrieving the node.
+Below is a more complex example of setting `pluginData` on several nodes by returning an array of nodes. It also shows how you can also provide in a dynamic value in retrieving the node.
 
 ```js
 let store = await Store.create(
