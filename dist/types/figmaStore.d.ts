@@ -1,3 +1,4 @@
+import { get } from "svelte/store";
 type NonUndefined<T> = Exclude<T, undefined>;
 export declare class FigmaStore<T extends object | number | string | boolean> {
     private state;
@@ -23,4 +24,4 @@ export declare class FigmaStore<T extends object | number | string | boolean> {
     /** Internal method to save state */
     private _saveStateToStorage;
 }
-export {};
+export { get };

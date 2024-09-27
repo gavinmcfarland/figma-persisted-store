@@ -1,4 +1,4 @@
-import { writable } from "svelte/store";
+import { writable, get } from "svelte/store";
 import { figmaAPI } from "./figmaAPI";
 export class FigmaStore {
     state;
@@ -109,3 +109,5 @@ export class FigmaStore {
         }
     }
 }
+// Export svelte's get method so it can be retreived
+export { get };

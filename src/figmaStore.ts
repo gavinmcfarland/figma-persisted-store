@@ -1,4 +1,4 @@
-import { writable, type Writable } from "svelte/store";
+import { writable, type Writable, get } from "svelte/store";
 import { figmaAPI } from "./figmaAPI";
 
 type NonUndefined<T> = Exclude<T, undefined>;
@@ -73,6 +73,10 @@ export class FigmaStore<T extends object | number | string | boolean> {
 		invalidate?: (value?: T) => void
 	): () => void {
 		return this.store.subscribe(run, invalidate);
+	}
+
+	get(): T {
+		return this.state;
 	}
 
 	/** Set the state immediately and persist asynchronously */
@@ -154,3 +158,6 @@ export class FigmaStore<T extends object | number | string | boolean> {
 		}
 	}
 }
+
+// Export svelte's get method so it can be retreived
+export { get };

@@ -57,6 +57,14 @@ The same happens for replacing the value using `set`.
 store.set(0);
 ```
 
+### Getting a store
+
+Retrieve the value of the store from the UI.
+
+```js
+console.log(store.get()); // => 0
+```
+
 ## PluginData
 
 Below is a basic example of storing a value using `pluginData`. It requires a key, an initial value and a function that returns the node for the plugin data to be set on.
