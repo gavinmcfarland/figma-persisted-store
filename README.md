@@ -5,6 +5,12 @@ This allows you to create stores which can persists in `clientStorage` and `plug
 > [!NOTE]
 > This project is still in conception.
 
+## Install
+
+```shell
+npm install figma-store --save-dev
+```
+
 ## Setup
 
 Inside the UI import the `FigmaStore` class.
